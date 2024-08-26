@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="DataSource">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString />
+      </ConnectionProperties>
+      <rd:SecurityType>None</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <Height>2in</Height>
+        <Style />
+      </Body>
+      <Width>6.5in</Width>
+      <Page>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <Code>Public Function BlankZero(ByVal Value As Decimal)
+    if Value = 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankPos(ByVal Value As Decimal)
+    if Value &gt; 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankZeroAndPos(ByVal Value As Decimal)
+    if Value &gt;= 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankNeg(ByVal Value As Decimal)
+    if Value &lt; 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+
+Public Function BlankNegAndZero(ByVal Value As Decimal)
+    if Value &lt;= 0 then
+        Return ""
+    end if
+    Return Value
+End Function
+</Code>
+  <Language>=User!Language</Language>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>0eeb6585-38ae-40f1-885b-8d50088d51b4</rd:ReportID>
+  <DataSets>
+    <DataSet Name="DataSet_Result">
+      <Fields>
+        <Field Name="BuyfromVendorName">
+          <DataField>BuyfromVendorName</DataField>
+        </Field>
+        <Field Name="Buy_from_Address">
+          <DataField>Buy_from_Address</DataField>
+        </Field>
+        <Field Name="Buy_from_City">
+          <DataField>Buy_from_City</DataField>
+        </Field>
+        <Field Name="BuyfromVendorNo">
+          <DataField>BuyfromVendorNo</DataField>
+        </Field>
+        <Field Name="Buy_from_Contact">
+          <DataField>Buy_from_Contact</DataField>
+        </Field>
+        <Field Name="Amount">
+          <DataField>Amount</DataField>
+        </Field>
+        <Field Name="AmountFormat">
+          <DataField>AmountFormat</DataField>
+        </Field>
+        <Field Name="AmountIncludingVAT">
+          <DataField>AmountIncludingVAT</DataField>
+        </Field>
+        <Field Name="AmountIncludingVATFormat">
+          <DataField>AmountIncludingVATFormat</DataField>
+        </Field>
+        <Field Name="No">
+          <DataField>No</DataField>
+        </Field>
+        <Field Name="Purchaser_Code">
+          <DataField>Purchaser_Code</DataField>
+        </Field>
+        <Field Name="Payment_Terms_Code">
+          <DataField>Payment_Terms_Code</DataField>
+        </Field>
+        <Field Name="Order_Date">
+          <DataField>Order_Date</DataField>
+        </Field>
+        <Field Name="totalTVA">
+          <DataField>totalTVA</DataField>
+        </Field>
+        <Field Name="totalTVAFormat">
+          <DataField>totalTVAFormat</DataField>
+        </Field>
+        <Field Name="Line_No_">
+          <DataField>Line_No_</DataField>
+        </Field>
+        <Field Name="DescriptionLine">
+          <DataField>DescriptionLine</DataField>
+        </Field>
+        <Field Name="QuantityLine">
+          <DataField>QuantityLine</DataField>
+        </Field>
+        <Field Name="QuantityLineFormat">
+          <DataField>QuantityLineFormat</DataField>
+        </Field>
+        <Field Name="Unit_CostLine">
+          <DataField>Unit_CostLine</DataField>
+        </Field>
+        <Field Name="Unit_CostLineFormat">
+          <DataField>Unit_CostLineFormat</DataField>
+        </Field>
+        <Field Name="Unit_Price">
+          <DataField>Unit_Price</DataField>
+        </Field>
+        <Field Name="Unit_PriceFormat">
+          <DataField>Unit_PriceFormat</DataField>
+        </Field>
+        <Field Name="Item_Reference_No_">
+          <DataField>Item_Reference_No_</DataField>
+        </Field>
+        <Field Name="Amountline">
+          <DataField>Amountline</DataField>
+        </Field>
+        <Field Name="AmountlineFormat">
+          <DataField>AmountlineFormat</DataField>
+        </Field>
+        <Field Name="Line_Amount">
+          <DataField>Line_Amount</DataField>
+        </Field>
+        <Field Name="Line_AmountFormat">
+          <DataField>Line_AmountFormat</DataField>
+        </Field>
+        <Field Name="Line_Discount__">
+          <DataField>Line_Discount__</DataField>
+        </Field>
+        <Field Name="Line_Discount__Format">
+          <DataField>Line_Discount__Format</DataField>
+        </Field>
+        <Field Name="Amount_Including_VATLine">
+          <DataField>Amount_Including_VATLine</DataField>
+        </Field>
+        <Field Name="Amount_Including_VATLineFormat">
+          <DataField>Amount_Including_VATLineFormat</DataField>
+        </Field>
+        <Field Name="Item_Category_CodeLine">
+          <DataField>Item_Category_CodeLine</DataField>
+        </Field>
+        <Field Name="VAT_Prod__Posting_GroupLine">
+          <DataField>VAT_Prod__Posting_GroupLine</DataField>
+        </Field>
+        <Field Name="VAT_Base_AmountLine">
+          <DataField>VAT_Base_AmountLine</DataField>
+        </Field>
+        <Field Name="VAT_Base_AmountLineFormat">
+          <DataField>VAT_Base_AmountLineFormat</DataField>
+        </Field>
+        <Field Name="VAT__Line">
+          <DataField>VAT__Line</DataField>
+        </Field>
+        <Field Name="VAT__LineFormat">
+          <DataField>VAT__LineFormat</DataField>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource</DataSourceName>
+        <CommandText />
+      </Query>
+    </DataSet>
+  </DataSets>
+</Report>
