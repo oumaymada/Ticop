@@ -62,6 +62,7 @@ pageextension 50067 purchaseinvoiceExt extends "Purchase Invoice"
                                     IF recLpurchRCPLine.FINDFIRST THEN BEGIN
                                         NumLine := 0;
                                         REPEAT
+
                                             ItemChargePurch."Document Type" := Rec."Document Type";
                                             ItemChargePurch."Document No." := Rec."No.";
                                             ItemChargePurch."Document Line No." := recLPurchaselineInv."Line No.";
@@ -77,6 +78,8 @@ pageextension 50067 purchaseinvoiceExt extends "Purchase Invoice"
                                             CUItemchargePurch.CreateRcptChargeAssgnt(recLpurchRCPLine, ItemChargePurch);
                                             //CUItemchargePurch.SuggestAssgnt(recLPurchaselineInv, recLPurchaselineInv."Qty. to Assign", recLPurchaselineInv.Amount);
                                             CUItemchargePurch.AssignItemCharges(recLPurchaselineInv, recLPurchaselineInv.Quantity, recLPurchaselineInv."Line Amount", 2);
+                                            ItemChargePurch.FindLast();
+                                            NumLine := ItemChargePurch."Line No.";
                                         UNTIL recLpurchRCPLine.NEXT = 0;
                                     END;
                                 END;
@@ -98,6 +101,11 @@ pageextension 50067 purchaseinvoiceExt extends "Purchase Invoice"
                     recLpurchRcpHeader: Record "Purch. Rcpt. Header";
                     NumLine: Integer;
                     CUItemchargePurch: Codeunit "Item Charge Assgnt. (Purch.)";
+                    DroitDouaneLEntry: Record DroitDouaneLedgerEntry;
+                    DroitDouaneLEntry2: Record DroitDouaneLedgerEntry;
+                    LineNo: Integer;
+                    percent: Decimal;
+
 
                 begin
 
@@ -105,116 +113,122 @@ pageextension 50067 purchaseinvoiceExt extends "Purchase Invoice"
                     ItemChargePurch.SETRANGE("Document Type", Rec."Document Type");
                     ItemChargePurch.SETRANGE("Document No.", Rec."No.");
 
-                    ItemChargePurch.SETRANGE("Item Charge No.", 'DD');
+                    //ItemChargePurch.SETRANGE(ItemChargePurch."Droit Douane", true);
 
                     ItemChargePurch.DELETEALL;
+                    // 
+
 
 
                     recLPurchaselineInv.SETRANGE("Document Type", Rec."Document Type");
                     recLPurchaselineInv.SETRANGE("Document No.", Rec."No.");
                     recLPurchaselineInv.SETRANGE(Type, recLPurchaselineInv.Type::"Charge (Item)");
-                    recLPurchaselineInv.SETRANGE(recLPurchaselineInv."No.", 'DD');
+                    //recLPurchaselineInv.SETRANGE(recLPurchaselineInv."No.", 'DD');
+                    recLPurchaselineInv.SetRange(recLPurchaselineInv."Droit douane", true);
 
-                    IF recLPurchaselineInv.FINDFIRST THEN
+                    recLPurchaselineInv.FINDFIRST;
+                    DroitDouaneLEntry.SetRange("DI No", rec."DI No.");
+                    //DroitDouaneLEntry.FindFirst();
+                    DroitDouaneLEntry.CalcSums(Amount);
+                    if recLPurchaselineInv."Line Amount" <> DroitDouaneLEntry.Amount then
+                        Error('La somme des Montants Droit douane pour Dossier Import %1 est différent de Montant %2', Rec."DI No.", recLPurchaselineInv."Line Amount")
+                    else begin
+
+                        DroitDouaneLEntry2.SetRange("DI No", rec."DI No.");
+                        DroitDouaneLEntry2.FindFirst();
                         repeat
-                            recLpurchRcpHeader.SetRange("DI No.", Rec."DI No.");
-                            if recLpurchRcpHeader.FindFirst() then
+                            DroitDouaneLEntry2.TestField(Amount);
+                            DroitDouaneLEntry2.TestField(NGP);
+                            //DroitDouaneLEntry2.TestField(Origin);
 
-                                // A vérifier une seule réception par Dossier import
-                                recLpurchRCPLine.SETRANGE(recLpurchRCPLine."Document No.", recLpurchRcpHeader."No.");
+                            recLpurchRcpHeader.SetRange("DI No.", Rec."DI No.");
+
+                            recLpurchRcpHeader.FindFirst();
+
+                            // A vérifier une seule réception par Dossier import
+                            recLpurchRCPLine.SETRANGE(recLpurchRCPLine."Document No.", recLpurchRcpHeader."No.");
                             recLpurchRCPLine.SETRANGE(recLpurchRCPLine.Type, recLpurchRCPLine.Type::Item);
+                            recLpurchRCPLine.SetRange("Tariff No.", DroitDouaneLEntry2.NGP);
+                            recLpurchRCPLine.SetRange("Entry Point", DroitDouaneLEntry2.Origin);
+                            recLpurchRCPLine.SetFilter(Quantity, '<>0');
                             IF recLpurchRCPLine.FINDFIRST THEN BEGIN
-                                NumLine := 0;
+
 
                                 REPEAT
+                                    LineNo += 1;
+                                    ItemChargePurch.init;
                                     ItemChargePurch."Document Type" := Rec."Document Type";
                                     ItemChargePurch."Document No." := Rec."No.";
                                     ItemChargePurch."Document Line No." := recLPurchaselineInv."Line No.";
-                                    ItemChargePurch."Line No." := NumLine + 10000;
-                                    ItemChargePurch."Item Charge No." := recLPurchaselineInv."No.";
+
+                                    ItemChargePurch."Line No." := LineNo; //ItemChargePurch."Line No." + 10000;
+
+                                    ItemChargePurch.validate("Item Charge No.", recLPurchaselineInv."No.");
                                     ItemChargePurch.VALIDATE("Item No.", recLpurchRCPLine."No.");
 
                                     ItemChargePurch."Applies-to Doc. Type" := ItemChargePurch."Applies-to Doc. Type"::Receipt;
+                                    ItemChargePurch."Applies-to Doc. No." := recLpurchRCPLine."Document No.";
                                     ItemChargePurch."Applies-to Doc. Line No." := recLpurchRCPLine."Line No.";
 
-                                    ItemChargePurch."Unit Cost" := recLPurchaselineInv."Unit Cost";
+                                    ItemChargePurch.validate("Unit Cost", DroitDouaneLEntry2.Amount);
                                     ItemChargePurch."DI No." := Rec."DI No.";
                                     ItemChargePurch."Droit Douane" := true;
-                                    //ItemChargePurch.Insert();
-                                    CUItemchargePurch.CreateRcptChargeAssgnt(recLpurchRCPLine, ItemChargePurch);
-                                    CUItemchargePurch.AssignItemCharges(recLPurchaselineInv, recLPurchaselineInv.Quantity, recLPurchaselineInv."Line Amount", 0);
+                                    //ItemChargePurch.
 
-                                //CUItemchargePurch.AssignItemCharges(recLPurchaselineInv,recLPurchaselineInv.Quantity,2);
+                                    percent := recLpurchRCPLine.Quantity * recLpurchRCPLine."Direct Unit Cost" * (1 - recLpurchRCPLine."Line Discount %" / 100)
+                                    / GetTotalAmountNGP_inReceiptLines(recLpurchRCPLine."Document No.", DroitDouaneLEntry2.NGP, DroitDouaneLEntry2.Origin);
+
+                                    ItemChargePurch.Validate("Amount to Assign", DroitDouaneLEntry2.Amount * percent);
+                                    //ItemChargePurch.Validate("Qty. to Assign", percent);
+                                    ItemChargePurch.Validate("Amount to Handle", DroitDouaneLEntry2.Amount * percent);
+                                    // ItemChargePurch.Validate("Qty. to Handle", percent);
+
+                                    ///Message('%1--%2', DroitDouaneLEntry2.Amount, percent);
+
+
+                                    ItemChargePurch.Insert();
+                                // Message('%1', ItemChargePurch);
+
+                                // CUItemchargePurch.CreateRcptChargeAssgnt(recLpurchRCPLine, ItemChargePurch);
+
+                                //TotalMtDD += 
+
+
                                 UNTIL recLpurchRCPLine.NEXT = 0;
+
+
+
+
+                                //      CUItemchargePurch.AssignItemCharges(recLPurchaselineInv, recLPurchaselineInv.Quantity, DroitDouaneLEntry2.Amount, 1);
+
+
+
                             END;
-                        UNTIL recLPurchaselineInv.NEXT = 0;
-                    MESSAGE('Ventilation de DD avec Succès');
-                end;
-            }
-            action(ExtraireDD)
 
-            {
-                trigger OnAction()
-                var
-                    recPurchaseRCP: Record "Purch. Rcpt. Header";
-                    RecLPurchRCPLine2: record "Purch. Rcpt. Line";
-                    reclpurchLine: record "Purchase Line";
-                    LineNo: Integer;
-                // itm:record item;
-                begin
-
-                    Rec.TESTFIELD("DI No.");
-                    recPurchaseRCP.SETRANGE(recPurchaseRCP."DI No.", rec."DI No.");
-                    if recPurchaseRCP.FindFirst() then begin
-
-
-                        RecLPurchRCPLine2.SETRANGE(RecLPurchRCPLine2."Document No.", recPurchaseRCP."No.");
-                        RecLPurchRCPLine2.SETRANGE(RecLPurchRCPLine2.Type, RecLPurchRCPLine2.Type::Item);
-                        RecLPurchRCPLine2.SETFILTER(Quantity, '<>%1', 0);
-                        IF RecLPurchRCPLine2.FINDFIRST THEN
-                            REPEAT
-                                reclpurchLine.SETCURRENTKEY("Document Type", "Document No.", Type, "No.");
-                                reclpurchLine.RESET;
-                                reclpurchLine.SETRANGE("Document Type", Rec."Document Type");
-                                reclpurchLine.SETRANGE("Document No.", Rec."No.");
-                                reclpurchLine.SETRANGE("Buy-from Vendor No.", rec."Buy-from Vendor No.");
-                                IF reclpurchLine.FINDLAST THEN
-                                    LineNo := reclpurchLine."Line No." + 10000
-                                ELSE
-                                    LineNo := 10000;
-
-                                reclpurchLine.SETCURRENTKEY("Document Type", "Document No.", Type, "No.");
-                                reclpurchLine.SETRANGE("Document Type", rec."Document Type");
-                                reclpurchLine.SETRANGE("Document No.", rec."No.");
-                                reclpurchLine.SETRANGE("Buy-from Vendor No.", Rec."Buy-from Vendor No.");
-                                reclpurchLine.SETRANGE(reclpurchLine.Type, reclpurchLine.Type::"Charge (Item)");
-                                reclpurchLine.SETRANGE(reclpurchLine."No.", 'DD');
-                                reclpurchLine.SETRANGE("Tariff No.", RecLPurchRCPLine2."Tariff No.");
-                                reclpurchLine.SETRANGE("Entry Point", RecLPurchRCPLine2."Entry Point");
-
-                                IF (NOT reclpurchLine.FINDFIRST) THEN BEGIN
-                                    reclpurchLine.LOCKTABLE;
-                                    reclpurchLine.INIT;
-                                    reclpurchLine."Document Type" := Rec."Document Type";
-                                    reclpurchLine."Document No." := Rec."No.";
-                                    reclpurchLine."Line No." := LineNo;
-                                    reclpurchLine.Type := reclpurchLine.Type::"Charge (Item)";
-                                    reclpurchLine.VALIDATE(reclpurchLine."No.", 'DD');
-                                    reclpurchLine."Entry Point" := RecLPurchRCPLine2."Entry Point";
-                                    reclpurchLine."Tariff No." := RecLPurchRCPLine2."Tariff No.";
-                                    reclpurchLine.VALIDATE(Quantity, 1);
-                                    reclpurchLine.INSERT;
-                                END;// ELSE BEGIN
-                                    // reclpurchLine."Direct Unit Cost" += RecLPurchOrder.DroitDouane;
-                                    //  reclpurchLine.VALIDATE("Direct Unit Cost");
-                                    //   reclpurchLine.MODIFY;
-                                    // END;
-
-
-                            UNTIL RecLPurchRCPLine2.NEXT = 0;
+                        UNTIL DroitDouaneLEntry2.NEXT = 0;
+                        MESSAGE('Ventilation de Droit Douane avec Succès');
                     end;
+
                 end;
             }
+
+
+
         }
     }
+    local procedure GetTotalAmountNGP_inReceiptLines(docNo: code[20]; Ngp: code[20]; Origin: code[20]) total: Decimal
+    var
+        recLpurchRCPLine: Record 121;
+    begin
+        recLpurchRCPLine.SetFilter("Document No.", docNo);
+
+        recLpurchRCPLine.SetRange("Tariff No.", Ngp);
+        recLpurchRCPLine.SetRange("Entry Point", Origin);
+        recLpurchRCPLine.SetRange(Type, recLpurchRCPLine.Type::Item);
+        recLpurchRCPLine.SetFilter(Quantity, '<>0');
+        recLpurchRCPLine.FindFirst();
+        repeat
+            total += recLpurchRCPLine.Quantity * recLpurchRCPLine."Direct Unit Cost" * (1 - recLpurchRCPLine."Line Discount %" / 100);
+        until recLpurchRCPLine.next = 0;
+    end;
 }

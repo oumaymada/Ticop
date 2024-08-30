@@ -75,6 +75,14 @@ page 50059 "Import folder card"
 
                 }
             }
+            part(DroitDouane; "Droit douane ledger entry")
+            {
+                ApplicationArea = all;
+                Editable = true;
+
+                SubPageLink = "DI No" = field("No.");
+
+            }
         }
     }
 
@@ -82,20 +90,57 @@ page 50059 "Import folder card"
     {
         area(Processing)
         {
-            action(ActionName)
-            {
-                ApplicationArea = All;
+            action(ExtraireDD)
 
+            {
+                Image = Process;
                 trigger OnAction()
+                var
+                    recPurchaseRCP: Record "Purch. Rcpt. Header";
+                    RecLPurchRCPLine: record "Purch. Rcpt. Line";
+                    DroitDouaneLEntry: record DroitDouaneLedgerEntry;
+                    LineNo: Integer;
+                // itm:record item;
                 begin
 
+
+                    recPurchaseRCP.SETRANGE(recPurchaseRCP."DI No.", rec."No.");
+                    RecLPurchRCPLine.SetRange("Buy-from Vendor No.", rec."Vendor No.");
+                    if recPurchaseRCP.FindFirst() then begin
+
+
+                        RecLPurchRCPLine.SETRANGE(RecLPurchRCPLine."Document No.", recPurchaseRCP."No.");
+                        RecLPurchRCPLine.SETRANGE(RecLPurchRCPLine.Type, RecLPurchRCPLine.Type::Item);
+                        RecLPurchRCPLine.SETFILTER(Quantity, '<>%1', 0);
+                        IF RecLPurchRCPLine.FINDFIRST THEN
+                            REPEAT
+
+                                DroitDouaneLEntry.RESET;
+                                DroitDouaneLEntry.SETRANGE(DroitDouaneLEntry."DI No", Rec."No.");
+                                DroitDouaneLEntry.SETRANGE(DroitDouaneLEntry.NGP, RecLPurchRCPLine."Tariff No.");
+                                DroitDouaneLEntry.SETRANGE(DroitDouaneLEntry.Origin, RecLPurchRCPLine."Entry Point");
+
+                                IF (NOT DroitDouaneLEntry.FINDFIRST) THEN BEGIN
+                                    DroitDouaneLEntry.LOCKTABLE;
+                                    DroitDouaneLEntry.INIT;
+
+                                    DroitDouaneLEntry."DI No" := Rec."No.";
+                                    DroitDouaneLEntry.NGP := RecLPurchRCPLine."Tariff No.";
+                                    DroitDouaneLEntry.Origin := RecLPurchRCPLine."Entry Point";
+                                    DroitDouaneLEntry.INSERT;
+                                END;
+
+
+                            UNTIL RecLPurchRCPLine.NEXT = 0;
+                    end else
+                        Message('Aucune réception n''est associée au dossier %1', Rec."No.");
                 end;
             }
         }
     }
 
     var
-        myInt: Integer;
+
 
     trigger OnAfterGetRecord()
     begin

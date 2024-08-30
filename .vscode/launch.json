@@ -6,7 +6,7 @@
             "request": "launch",
             "type": "al",
             "environmentType": "OnPrem",
-            "server": "http://172.16.8.195",
+            "server": "http://172.16.8.197",
             "serverInstance": "BC240",
             "authentication": "Windows",
             "startupObjectId": 22,
